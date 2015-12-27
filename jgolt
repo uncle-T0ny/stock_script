@@ -1,0 +1,131 @@
+#!/usr/bin/env /usr/bin/python3.4
+'''
+	требования к jgolt
+	python 3.4.3
+	утилита tree, sudo apt-get install tree
+
+'''
+
+import os
+import readline
+
+from os.path import expanduser
+from pathlib import Path
+from subprocess import Popen, PIPE
+
+HOME_FOLDER = expanduser("~")
+STOCK_FOLDER = HOME_FOLDER + os.sep + ".stock" + os.sep
+stock_path = Path(STOCK_FOLDER)
+GIT_REPO_URL = 'https://github.com/uncle-T0ny/stock.git'
+
+print('Hello to J.Golt util.')
+
+if not stock_path.is_dir():
+    stock_path.mkdir()
+
+if not stock_path.exists():
+    print("Can't create stock folder: " + STOCK_FOLDER)
+    exit(1)
+commands_stdout = ''
+
+if not os.listdir(str(stock_path)): # is empty folder
+    Popen(["git", "init"],
+          cwd=str(stock_path), stdout=PIPE).communicate()
+    Popen(['git', 'remote', 'add', '--mirror=push', 'origin', GIT_REPO_URL],
+          cwd=str(stock_path), stdout=PIPE).communicate()
+    Popen(["git", "pull"],
+          cwd=str(stock_path), stdout=PIPE).communicate()
+    print("repo cloned")
+else:
+    Popen(["git", "pull"],
+          cwd=str(stock_path), stdout=PIPE).communicate()
+    print("repo updated: " + str(stock_path))
+
+
+class VolcabCompleter:
+    def __init__(self, volcab):
+        self.volcab = volcab
+
+    def complete(self, text, state):
+        results = [x + " " for x in self.volcab if x.startswith(text)] + [None]
+        return results[state]
+
+cur_path = None
+folders_list = os.listdir(str(stock_path))
+root_folders_list = folders_list
+
+complete_system_dict = [] #['help', 'exit']
+complete_dict = complete_system_dict + folders_list
+completer = VolcabCompleter(complete_dict)
+
+readline.set_completer(completer.complete)
+
+def update_complete_dict(new_dict):
+    completer = VolcabCompleter(complete_system_dict + new_dict)
+    readline.set_completer(completer.complete)
+    pass
+
+def parse_line(line):
+    if line.startswith('exit'):
+        print('Good bye!')
+        exit(0)
+    if line.strip() in folders_list:
+        folder = line.strip()
+        move_into(folder)
+        return
+    if line == '..':
+        move_out()
+        return
+    if line.startswith('tree'):
+    	pritn_tree(line)
+    	return
+
+    print('no such command: ' + line)
+
+
+def move_into(folder):
+    global folders_list
+    global cur_path
+    if not cur_path:
+        cur_path = stock_path
+    path = cur_path / folder
+    if path.is_dir():
+        cur_path = path
+        folders_list = os.listdir(str(cur_path))
+        update_complete_dict(folders_list)
+        print('dirs: ' + str(folders_list))
+    else:
+        print('file found: ' +  folder)
+        f = open(str(cur_path / folder), 'r')
+        print(f.read())
+
+def move_out():
+    global folders_list
+    global cur_path
+    if not cur_path:
+        cur_path = stock_path
+    cur_path = cur_path.parent
+    folders_list = os.listdir(str(cur_path))
+    update_complete_dict(folders_list)
+    pass
+
+def pritn_tree(input):
+	'''print the tree of preset folders'''
+	bytes_text = Popen(input.split(' '),cwd=str(stock_path), stdout=PIPE).communicate()
+	text = bytes_text[0].decode('utf-8').replace(u'\xa0', u' ')
+	for t in text.split('\n'):
+		print(t)
+
+try:
+    while True:
+        readline.parse_and_bind("tab: complete")
+        if cur_path != None:
+            line = input('J.Golt >' + str(cur_path).replace(str(stock_path), '') + '> ')
+        else:
+            line = input('J.Golt >')
+        parse_line(line)
+except EOFError:
+    print('EOF catched!')
+except KeyboardInterrupt:
+    print('Good bye!')
+    exit(0)
