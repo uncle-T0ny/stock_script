@@ -3,6 +3,9 @@
 	требования к jgolt
 	python 3.4.3
 	утилита tree, sudo apt-get install tree
+	
+	move script to: /usr/bin/jgolt
+	and add priveligious: sudo chmod 777 /usr/bin/jgolt
 
 '''
 
