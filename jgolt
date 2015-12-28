@@ -123,7 +123,7 @@ try:
     while True:
         readline.parse_and_bind("tab: complete")
         if cur_path != None:
-            line = input('J.Golt >' + str(cur_path).replace(str(stock_path), '') + '> ')
+            line = input('J.Golt ' + str(cur_path).replace(str(stock_path), '') + '> ')
         else:
             line = input('J.Golt >')
         parse_line(line)
