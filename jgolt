@@ -13,6 +13,7 @@ import os
 import readline
 
 from os.path import expanduser
+from os import walk
 from pathlib import Path
 from subprocess import Popen, PIPE
 
@@ -21,7 +22,14 @@ STOCK_FOLDER = HOME_FOLDER + os.sep + ".stock" + os.sep
 stock_path = Path(STOCK_FOLDER)
 GIT_REPO_URL = 'https://github.com/uncle-T0ny/stock.git'
 
+print()
+print()
 print('Hello to J.Golt util.')
+help_text = """OPTIONS \n
+                 \\h   show help\n
+                 \\f   search, only one argument supported \n
+                 \\t   show files as tree view \n"""
+print(help_text)
 
 if not stock_path.is_dir():
     stock_path.mkdir()
@@ -53,6 +61,13 @@ class VolcabCompleter:
         results = [x + " " for x in self.volcab if x.startswith(text)] + [None]
         return results[state]
 
+all_content = {}
+# get list of all folders and files
+for (dirpath, dirnames, filenames) in walk(str(stock_path)):
+    if ".git" not in dirpath:
+        all_content[dirpath] = dirnames + filenames 
+    pass
+
 cur_path = None
 folders_list = os.listdir(str(stock_path))
 root_folders_list = folders_list
@@ -79,9 +94,17 @@ def parse_line(line):
     if line == '..':
         move_out()
         return
-    if line.startswith('tree'):
-    	pritn_tree(line)
-    	return
+    if line.startswith('\\t'):
+        args = line.split(' ')
+        args.pop(0)     #exclude \\t
+        pritn_tree(args)
+        return
+    if line.startswith('\\h'):
+        print(help_text)
+        return
+    if line.startswith('\\f'):
+        find_content(line.split(' ')[1], all_content)
+        return
 
     print('no such command: ' + line)
 
@@ -113,11 +136,31 @@ def move_out():
     pass
 
 def pritn_tree(input):
-	'''print the tree of preset folders'''
-	bytes_text = Popen(input.split(' '),cwd=str(stock_path), stdout=PIPE).communicate()
-	text = bytes_text[0].decode('utf-8').replace(u'\xa0', u' ')
-	for t in text.split('\n'):
-		print(t)
+    '''print the tree of preset folders'''
+    bytes_text = Popen(['tree'] + input,cwd=str(stock_path), stdout=PIPE).communicate()
+    text = bytes_text[0].decode('utf-8').replace(u'\xa0', u' ')
+    for t in text.split('\n'):
+        print(t)
+
+def find_content(args, all_content_map):
+    def el_in_arr(el, arr, return_el):
+        b = False
+        e = '' 
+        for item in arr:
+            if item.startswith(el):
+                b = True
+                e = item
+        if return_el:
+            return e
+        else:
+            return b
+
+    find_result = [k + "/" + el_in_arr(args, files, True) for k, files in all_content_map.items() if el_in_arr(args, files, False)]
+    print("***   Results   ***")
+    for res in find_result:
+        print(res.replace(str(stock_path), ''))
+    print("***   *******   ***")
+    pass
 
 try:
     while True:
