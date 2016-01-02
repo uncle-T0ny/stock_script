@@ -25,10 +25,15 @@ GIT_REPO_URL = 'https://github.com/uncle-T0ny/stock.git'
 print()
 print()
 print('Hello to J.Golt util.')
-help_text = """OPTIONS \n
+help_text = """
+            Use double tab to show current folder.
+            Type folder/filde name to get it.
+            
+            OPTIONS \n
                  \\h   show help\n
                  \\f   search, only one argument supported \n
-                 \\t   show files as tree view \n"""
+                 \\t   show files as tree view \n
+                 \\g   grep"""
 print(help_text)
 
 if not stock_path.is_dir():
@@ -105,9 +110,14 @@ def parse_line(line):
     if line.startswith('\\f'):
         find_content(line.split(' ')[1], all_content)
         return
+    if line.startswith('\\g'):        
+        grep_content(line.split(' '))
+        return
 
     print('no such command: ' + line)
 
+def transform_text(text):
+    return text[0].decode('utf-8').replace(u'\xa0', u' ')
 
 def move_into(folder):
     global folders_list
@@ -138,7 +148,7 @@ def move_out():
 def pritn_tree(input):
     '''print the tree of preset folders'''
     bytes_text = Popen(['tree'] + input,cwd=str(stock_path), stdout=PIPE).communicate()
-    text = bytes_text[0].decode('utf-8').replace(u'\xa0', u' ')
+    text = transform_text(bytes_text)
     for t in text.split('\n'):
         print(t)
 
@@ -147,7 +157,7 @@ def find_content(args, all_content_map):
         b = False
         e = '' 
         for item in arr:
-            if item.startswith(el):
+            if item.lower().find(el.lower()) >= 0:
                 b = True
                 e = item
         if return_el:
@@ -159,7 +169,20 @@ def find_content(args, all_content_map):
     print("***   Results   ***")
     for res in find_result:
         print(res.replace(str(stock_path), ''))
-    print("***   *******   ***")
+    print("*******************")
+    pass
+
+def grep_content(args):
+    '''grep'''
+    args.pop(0)
+    args.append('-ir')
+    args.append('--exclude-dir=*\.git*')
+    args.append('-C 2')
+    greped_text = Popen(['grep'] + args,cwd=str(stock_path), stdout=PIPE).communicate()
+
+    print("***   Results   ***")
+    print(transform_text(greped_text))
+    print("*******************")
     pass
 
 try:
