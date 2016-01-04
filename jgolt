@@ -3,6 +3,7 @@
 	требования к jgolt
 	python 3.4.3
 	утилита tree, sudo apt-get install tree
+	утилита grep
 	
 	move script to: /usr/bin/jgolt
 	and add priveligious: sudo chmod 777 /usr/bin/jgolt
@@ -28,6 +29,7 @@ print('Hello to J.Golt util.')
 help_text = """
             Use double tab to show current folder.
             Type folder/filde name to get it.
+            Type '..' to move on level up
             
             OPTIONS \n
                  \\h   show help\n
